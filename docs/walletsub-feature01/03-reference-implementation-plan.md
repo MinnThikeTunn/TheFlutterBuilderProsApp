@@ -4,7 +4,12 @@ The application integrates Rewards through one small Wallet SDK facade. Junior
 Flutter developers work with product concepts only; SDK adapters own every
 security-sensitive and provider-specific detail.
 
-The first production slice is defined in
+Status (2026-09-20): the activation slice described across this folder is
+implemented. Authoritative public interface: `walletSDKspec.md` and
+`lib/wallet_sdk/wallet_sdk.dart`. Runtime: `context/current-state.md`. Step
+history: `stepbystep.md`.
+
+The first production slice was defined in
 `05-not-activated-screen-implementation-plan.md`.
 
 ## Dependency direction

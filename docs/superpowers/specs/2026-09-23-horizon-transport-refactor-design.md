@@ -1,7 +1,7 @@
 # Horizon HTTP Transport Refactor — Design
 
 Date: 2026-09-23
-Status: Approved design (not yet implemented)
+Status (2026-10-03): Implemented; analysis and all 79 tests pass. Physical-device verification and independent security approval remain open.
 
 ## Purpose
 
@@ -160,7 +160,11 @@ remain injectable on `DirectHorizonHealthClient`.
    `reconcile()` attempt (worst-case outer loop = 3 × 15s at startup).
    Injectable via constructor like the other op budgets.
 
-No other runtime behavior changes.
+Clarification recorded on 2026-10-03: the shared 5s connect/per-chunk read defaults
+also standardize consumers that previously had different phase timing. Their safe
+failure outcome may arrive earlier. Domain result mappings and operation budgets
+remain unchanged; the refactor is not strictly timing-neutral. Query and fragment
+are removed from constructed request URLs as intended by the URL-join policy.
 
 ## DI and wiring
 

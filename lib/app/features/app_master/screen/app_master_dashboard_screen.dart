@@ -4,6 +4,7 @@ import 'package:the_builder_pros/app/constant/resources/app_colors.dart';
 import 'package:the_builder_pros/app/core/base/base_view.dart';
 import 'package:the_builder_pros/app/features/app_master/controller/app_master_controller.dart';
 import 'package:the_builder_pros/app/features/app_master/widget/app_master_page.dart';
+import 'package:the_builder_pros/app/features/app_master/widget/builder_roster_section.dart';
 import 'package:the_builder_pros/app/features/wallet/widget/wallet_ui.dart';
 
 class AppMasterDashboardScreen extends BaseView<AppMasterController> {
@@ -192,60 +193,7 @@ class AppMasterDashboardScreen extends BaseView<AppMasterController> {
         ),
       ),
       const SizedBox(height: 22),
-      Row(
-        children: <Widget>[
-          Text('Builder access', style: Theme.of(context).textTheme.titleLarge),
-          const Spacer(),
-          const WalletStatusBadge(label: '3 Builders'),
-        ],
-      ),
-      const SizedBox(height: 10),
-      ...AppMasterController.builders.map(
-        (MockBuilderRewards builder) => Padding(
-          padding: const EdgeInsets.only(bottom: 10),
-          child: WalletCard(
-            child: Row(
-              children: <Widget>[
-                CircleAvatar(child: Text(builder.name.characters.first)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        builder.name,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        builder.rewardsBalance.replaceAll('BUILDER', 'Rewards'),
-                      ),
-                    ],
-                  ),
-                ),
-                WalletStatusBadge(
-                  label: builder.status,
-                  pending: builder.status.startsWith('Pending'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      const WalletCard(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Icon(Icons.science_outlined),
-            SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Builder access, balances, and activation results are UI previews. QR scanning and image import are active.',
-              ),
-            ),
-          ],
-        ),
-      ),
+      BuilderRosterSection(controller: controller),
     ],
   );
 }

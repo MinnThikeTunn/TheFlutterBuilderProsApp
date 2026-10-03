@@ -1,5 +1,10 @@
 # Wallet Sub-Feature 01 — User Stories
 
+Status (2026-09-20): activation stories US-01 through activation approval and
+App Master setup paths are implemented behind `WalletSdk`. Post-activation
+Rewards send/receive/history stories remain presentation-only. Runtime:
+`context/current-state.md`. Screen status: `01-screen-list.md`.
+
 ## Builder activation
 
 ### US-01 — Start activation

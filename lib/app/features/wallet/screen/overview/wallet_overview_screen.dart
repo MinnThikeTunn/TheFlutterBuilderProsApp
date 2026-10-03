@@ -10,40 +10,14 @@ class WalletOverviewScreen extends BaseView<WalletController> {
   @override
   Widget buildView(BuildContext context) => WalletPage(
     title: 'Rewards',
-    subtitle: 'Your Builder Rewards preview.',
+    subtitle: 'Your Builder Rewards.',
     trailing: IconButton.filledTonal(
       onPressed: controller.openLocked,
-      tooltip: 'Preview protected Rewards',
+      tooltip: 'Lock protected Rewards actions',
       icon: const Icon(Icons.lock_outline),
     ),
     children: <Widget>[
-      WalletCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                const Text('Available balance'),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => Get.snackbar(
-                    'Mock balance',
-                    'Balance refresh is presentation-only.',
-                  ),
-                  tooltip: 'Refresh mock balance',
-                  icon: const Icon(Icons.refresh),
-                ),
-              ],
-            ),
-            Text(
-              '1,250 pts',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            const WalletStatusBadge(label: 'Preview balance'),
-          ],
-        ),
-      ),
+      _RewardsBalanceCard(controller: controller),
       const SizedBox(height: 18),
       Row(
         children: <Widget>[
@@ -72,9 +46,38 @@ class WalletOverviewScreen extends BaseView<WalletController> {
               contentPadding: EdgeInsets.zero,
               leading: const Icon(Icons.history),
               title: const Text('Rewards history'),
-              subtitle: const Text('Review mock Rewards activity'),
+              subtitle: const Text('Review confirmed Rewards payments'),
               trailing: const Icon(Icons.chevron_right),
               onTap: controller.openHistory,
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.receipt_long_outlined),
+              title: const Text('Latest transfer status'),
+              subtitle: const Text('Restore or verify a saved transfer'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: controller.openTransferStatus,
+            ),
+            Obx(
+              () => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.system_update_alt),
+                title: const Text('Update Rewards service'),
+                subtitle: Text(
+                  controller.configurationError.value.isEmpty
+                      ? 'Request protected settings from App Master'
+                      : controller.configurationError.value,
+                ),
+                trailing: controller.isCreatingConfigurationRequest.value
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.chevron_right),
+                onTap: controller.isCreatingConfigurationRequest.value
+                    ? null
+                    : controller.openConfigurationRequest,
+              ),
             ),
             const Divider(),
             ListTile(
@@ -84,6 +87,14 @@ class WalletOverviewScreen extends BaseView<WalletController> {
               subtitle: const Text('Preview removal from this device'),
               trailing: const Icon(Icons.chevron_right),
               onTap: controller.openRemoveWallet,
+            ),
+            ListTile(
+              leading: const Icon(Icons.backup_outlined),
+              title: const Text('Back up or restore Rewards'),
+              subtitle: const Text(
+                'Save a backup or remove credentials from this device',
+              ),
+              onTap: controller.openRewardsRecovery,
             ),
           ],
         ),
@@ -97,5 +108,63 @@ class WalletOverviewScreen extends BaseView<WalletController> {
       const SizedBox(height: 12),
       const WalletPreviewNotice(),
     ],
+  );
+}
+
+class _RewardsBalanceCard extends StatefulWidget {
+  const _RewardsBalanceCard({required this.controller});
+  final WalletController controller;
+  @override
+  State<_RewardsBalanceCard> createState() => _RewardsBalanceCardState();
+}
+
+class _RewardsBalanceCardState extends State<_RewardsBalanceCard> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) widget.controller.refreshRewardsBalance();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => WalletCard(
+    child: Obx(() {
+      final balance = widget.controller.rewardsBalance.value;
+      final bool loading = widget.controller.isRefreshingBalance.value;
+      final String error = widget.controller.balanceError.value;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Row(
+            children: <Widget>[
+              const Text('Available balance'),
+              const Spacer(),
+              IconButton(
+                onPressed: loading
+                    ? null
+                    : widget.controller.refreshRewardsBalance,
+                tooltip: 'Refresh Rewards balance',
+                icon: const Icon(Icons.refresh),
+              ),
+            ],
+          ),
+          if (loading) const LinearProgressIndicator(),
+          const SizedBox(height: 8),
+          if (balance != null) ...<Widget>[
+            Text(
+              '${balance.available} ${balance.assetCode}',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            Text('Total Rewards: ${balance.total} ${balance.assetCode}'),
+            Text('Last checked: ${balance.observedAt.toLocal()}'),
+            if (widget.controller.isBalanceStale.value)
+              const Text('Previously checked balance — refresh unavailable.'),
+          ] else if (!loading)
+            const Text('Balance unavailable'),
+          if (error.isNotEmpty) Text(error),
+        ],
+      );
+    }),
   );
 }

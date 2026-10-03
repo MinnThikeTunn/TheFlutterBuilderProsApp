@@ -31,6 +31,15 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Controlled integration runs have their own app/data sandbox.
+            val entryPoint = project.findProperty("target")?.toString()?.replace('\\', '/')
+            // flutter test generates a temporary listener entry point.
+            if (entryPoint?.contains("integration_test/") == true ||
+                entryPoint?.contains("flutter_test_listener") == true) {
+                applicationIdSuffix = ".integration"
+            }
+        }
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.

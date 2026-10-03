@@ -13,28 +13,26 @@ remain private under `lib/wallet_sdk/src/`.
 
 ## Current baseline
 
+Last synchronized: 2026-10-03.
+
 ### Implemented
 
-- Public `WalletSdk` facade containing:
-  - `startActivation()`
-  - `restoreActivationRequest()`
-  - `cancelActivation()`
-- Safe `BuilderIdentity`, `ActivationRequestView`, and error types.
-- Builder detail validation.
-- A 15-minute restorable activation request.
-- Secure storage of the generated Builder secret.
-- Ordinary persistence of safe pending-request state.
-- A real QR rendered from the opaque request value.
-- Cancellation and rollback for the first request slice.
+Wallet SDK Steps 1–16 are implemented. Steps 1–9 are device verified. Steps 10–16
+pass automated checks. Details remain in each step section below. Runtime truth:
+`context/current-state.md`. Analysis snapshot:
+`docs/walletsub-feature01/analysis-report.md`.
 
-### Temporary implementation that must be replaced
+Public `WalletSdk` facade includes activation request/response, App Master
+inspection/approval, reconciliation, provider configuration save/status,
+distributor authority import/status/remove, App Master overview, and
+configuration-request/update operations. Feature code imports only
+`lib/wallet_sdk/wallet_sdk.dart`. There is no `stellar_flutter_sdk` dependency.
 
-- `stellar_flutter_sdk` currently generates the Builder keypair.
-- Activation QR encoding is inline in `DefaultWalletSdk`.
-- Storage, clock, random generation, and QR encoding are not yet separated into
-  private SDK services.
-- App Master NOWNodes saving is a UI mock.
-- The remaining facade operations and private internals are specifications only.
+### Still open
+
+- Step 16 two-physical-device testnet activation and provider-rotation gate
+- Independent security approval before production/mainnet
+- Post-activation Rewards balance, receive, send, and history remain mock
 
 ## Working protocol
 
@@ -626,6 +624,10 @@ after submission and confirm reconciliation resolves without duplicate funding.
 First-time activation is end-to-end functional and recoverable.
 
 ## Step 15 — Provider configuration update and rotation QR
+
+Flutter integration status (2026-10-03): Builder request/update review/apply and
+App Master request review/update QR flows are wired to the public SDK facade and
+covered by widget tests. The two-physical-device gate remains open.
 
 ### Goal
 

@@ -2,6 +2,9 @@
 
 The Wallet SDK is intentionally a black box. These diagrams show only the interface available to application developers. NOWNodes is named only in App Master Advanced; Builder-facing screens continue to use plain Rewards language.
 
+Status (2026-09-20): these sequences describe the implemented activation path.
+Runtime: `context/current-state.md`.
+
 ## 0. Builder and App interaction sequence
 
 ```mermaid

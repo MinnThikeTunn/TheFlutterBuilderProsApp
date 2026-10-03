@@ -2,7 +2,18 @@
 
 ## Status
 
-This document specifies the proposed mobile-to-mobile Rewards activation handshake. It is a design specification and is not yet implemented.
+This document is the design specification for the mobile-to-mobile Rewards
+activation handshake.
+
+**Implementation status (2026-09-20):** The activation handshake described here is
+implemented through Wallet SDK Steps 1–14 and the Builder / App Master Flutter
+surfaces. Runtime truth lives in `context/current-state.md`. Step gating and
+release gates live in `docs/walletsub-feature01/stepbystep.md`. A doc/code sync
+analysis lives in `docs/walletsub-feature01/analysis-report.md`.
+
+Remaining product gaps outside this handshake include mock post-activation
+Rewards operations, Flutter UI for provider-configuration rotation, and the
+Step 16 two-device testnet plus security-approval release gates.
 
 It replaces PC-assisted provisioning, temporary activation passcodes, encrypted access files, and private-key transfer with an atomic, partially signed Stellar transaction exchanged between two mobile applications through QR.
 

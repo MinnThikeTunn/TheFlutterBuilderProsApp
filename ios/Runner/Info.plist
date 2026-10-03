@@ -24,6 +24,8 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Confirm your reviewed Rewards transfer with device authentication.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Scan a Builder Rewards QR code.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

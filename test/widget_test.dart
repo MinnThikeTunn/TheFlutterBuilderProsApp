@@ -2,8 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:the_builder_pros/app/features/wallet/controller/wallet_controller.dart';
+import 'package:the_builder_pros/app/constant/routing/app_route.dart';
 import 'package:the_builder_pros/main_app.dart';
 import 'package:the_builder_pros/app/features/app_master/controller/app_master_controller.dart';
+import 'package:the_builder_pros/app/features/app_master/screen/app_master_configuration_review_screen.dart';
 import 'package:the_builder_pros/app/features/app_master/service/qr_input_adapter.dart';
 import 'package:the_builder_pros/wallet_sdk/wallet_sdk.dart';
 
@@ -27,6 +31,191 @@ void main() {
   });
 
   tearDown(Get.reset);
+
+  testWidgets('lock and removal use SDK access state without a mock passcode', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+    final controller = Get.find<WalletController>();
+    await controller.openLocked();
+    await tester.pumpAndSettle();
+    expect(fakeWalletSdk.access, RewardsAccessState.locked);
+    expect(find.text('Mock Rewards passcode'), findsNothing);
+    await tester.tap(find.text('Unlock Rewards'));
+    await tester.pumpAndSettle();
+    expect(fakeWalletSdk.access, RewardsAccessState.unlocked);
+    controller.openRemoveWallet();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Authenticate and disable access'));
+    await tester.tap(find.text('Authenticate and disable access'));
+    await tester.pumpAndSettle();
+    expect(fakeWalletSdk.access, RewardsAccessState.removed);
+    expect(find.text('Restore Rewards access'), findsOneWidget);
+    await tester.tap(find.text('Restore Rewards access'));
+    await tester.pumpAndSettle();
+    expect(fakeWalletSdk.access, RewardsAccessState.unlocked);
+  });
+
+  testWidgets(
+    'Send amount prepares an immutable SDK review with no mock approval',
+    (tester) async {
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+      Get.toNamed(Routes.walletSendScan);
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Public receiving account'),
+        'public-recipient',
+      );
+      await tester.tap(find.text('Check recipient'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Enter amount'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Rewards amount'),
+        '2.5',
+      );
+      await tester.tap(find.text('Prepare transfer review'));
+      await tester.pumpAndSettle();
+      expect(find.text('2.5 RWD'), findsOneWidget);
+      expect(find.text('0.00001 XLM'), findsOneWidget);
+      expect(find.text('public-issuer'), findsOneWidget);
+      expect(find.text('Confirm send'), findsNothing);
+      Get.find<WalletController>().amountController.text = '999';
+      await tester.pump();
+      expect(find.text('2.5 RWD'), findsOneWidget);
+      expect(find.text('999 RWD'), findsNothing);
+      await tester.ensureVisible(find.text('Confirm and send'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Confirm and send'));
+      await tester.pumpAndSettle();
+      expect(find.text('Rewards sent — ledger confirmed'), findsOneWidget);
+      expect(find.text('test-hash'), findsOneWidget);
+      expect(find.text('2.5 RWD'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Recipient check uses SDK data and clears observation when edited',
+    (tester) async {
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+      Get.toNamed(Routes.walletSendScan);
+      await tester.pumpAndSettle();
+      expect(find.text('Scan sample recipient'), findsNothing);
+      final field = find.widgetWithText(TextField, 'Public receiving account');
+      await tester.enterText(field, 'public-recipient');
+      await tester.tap(find.text('Check recipient'));
+      await tester.pumpAndSettle();
+      expect(find.text('Can receive up to 100 RWD'), findsOneWidget);
+      expect(find.text('Receiving account checked'), findsOneWidget);
+      expect(find.text('Continue to review'), findsNothing);
+      await tester.enterText(field, 'changed-recipient');
+      await tester.pumpAndSettle();
+      expect(find.text('Receiving account checked'), findsNothing);
+    },
+  );
+
+  testWidgets('History distinguishes empty pages from unavailable reads', (
+    tester,
+  ) async {
+    fakeWalletSdk.historyEmpty = true;
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+    Get.toNamed(Routes.walletHistory);
+    await tester.pumpAndSettle();
+    expect(
+      find.text('No Rewards payments on the pages checked.'),
+      findsOneWidget,
+    );
+    expect(find.text('Load more history'), findsNothing);
+    expect(find.text('Sent to Avery Chen'), findsNothing);
+  });
+
+  testWidgets('History loads pages and preserves rows on failed refresh', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+    Get.toNamed(Routes.walletHistory);
+    await tester.pumpAndSettle();
+    expect(find.text('2 RWD'), findsOneWidget);
+    await tester.tap(find.text('Load more history'));
+    await tester.pumpAndSettle();
+    expect(find.text('3 RWD'), findsOneWidget);
+    expect(find.text('Load more history'), findsNothing);
+    fakeWalletSdk.historyShouldFail = true;
+    await tester.tap(find.byTooltip('Refresh Rewards history'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 RWD'), findsOneWidget);
+    expect(
+      find.text('Previously loaded history — refresh unavailable.'),
+      findsOneWidget,
+    );
+    fakeWalletSdk.historyShouldFail = false;
+    await tester.tap(find.text('Retry history'));
+    await tester.pumpAndSettle();
+    expect(find.text('3 RWD'), findsNothing);
+    expect(
+      find.text('Previously loaded history — refresh unavailable.'),
+      findsNothing,
+    );
+  });
+
+  testWidgets('Overview loads SDK balance and marks failed refresh stale', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+    Get.toNamed(Routes.walletOverview);
+    await tester.pumpAndSettle();
+    expect(find.text('9.5 RWD'), findsOneWidget);
+    expect(find.text('1,250 pts'), findsNothing);
+    fakeWalletSdk.balanceShouldFail = true;
+    await tester.tap(find.byTooltip('Refresh Rewards balance'));
+    await tester.pumpAndSettle();
+    expect(find.text('9.5 RWD'), findsOneWidget);
+    expect(
+      find.text('Previously checked balance — refresh unavailable.'),
+      findsOneWidget,
+    );
+    fakeWalletSdk.balanceShouldFail = false;
+    await tester.tap(find.byTooltip('Refresh Rewards balance'));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Previously checked balance — refresh unavailable.'),
+      findsNothing,
+    );
+  });
+
+  testWidgets('Receive renders the exact SDK public account and QR', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+    Get.find<WalletController>().openReceive();
+    await tester.pumpAndSettle();
+    expect(find.text('test-public-account'), findsOneWidget);
+    expect(tester.widget<QrImageView>(find.byType(QrImageView)), isNotNull);
+    expect(find.text('BLD-JR-00142'), findsNothing);
+  });
+
+  testWidgets('Receive failure hides identity and offers retry', (
+    tester,
+  ) async {
+    fakeWalletSdk.receiveShouldFail = true;
+    await tester.pumpWidget(const MyApp());
+    await tester.pumpAndSettle();
+    Get.find<WalletController>().openReceive();
+    await tester.pumpAndSettle();
+    expect(find.text('Receiving details unavailable.'), findsOneWidget);
+    expect(find.byType(QrImageView), findsNothing);
+    fakeWalletSdk.receiveShouldFail = false;
+    await tester.tap(find.text('Load receiving details'));
+    await tester.pumpAndSettle();
+    expect(find.text('test-public-account'), findsOneWidget);
+  });
 
   testWidgets('opens the User Wallet activation entry', (tester) async {
     await tester.pumpWidget(const MyApp());
@@ -320,9 +509,259 @@ void main() {
     expect(Get.find<AppMasterController>().distributorSecret, isEmpty);
     expect(find.textContaining('private-test-value'), findsNothing);
   });
+
+  testWidgets('applies a verified Builder configuration update', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+    Get.toNamed(Routes.walletOverview);
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Update Rewards service'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(find.text('Update Rewards service'));
+    await tester.pump();
+    await tester.tap(find.text('Update Rewards service'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Update Rewards Service'), findsOneWidget);
+    expect(find.text('CFG-TEST-01'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Import update QR image'),
+      220,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Import update QR image'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Review Service Update'), findsOneWidget);
+    expect(find.text('UPD-TEST-01'), findsOneWidget);
+    expect(find.text('v2'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Apply service update'),
+      220,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.text('Apply service update'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Service Updated'), findsOneWidget);
+    expect(find.text('Configuration ready'), findsOneWidget);
+    expect(fakeWalletSdk.configurationApplyCalls, 1);
+  });
+
+  testWidgets('creates a device-bound configuration update in App Master', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const MyApp());
+    Get.toNamed(Routes.appMasterAdvanced);
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Builder configuration updates'),
+      300,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.scrollUntilVisible(
+      find.text('Import Builder request image'),
+      220,
+      scrollable: find.byType(Scrollable).first,
+    );
+    final AppMasterController controller = Get.find<AppMasterController>();
+    await controller.acceptConfigurationRequest('opaque-configuration-request');
+    expect(controller.configurationRequestReview.value, isNotNull);
+    await tester.pumpWidget(
+      const GetMaterialApp(home: AppMasterConfigurationReviewScreen()),
+    );
+    await tester.pump();
+
+    expect(find.text('Review Configuration Request'), findsOneWidget);
+    expect(find.text('CFG-TEST-01'), findsOneWidget);
+    await controller.createConfigurationUpdate();
+    expect(controller.configurationUpdate.value, isNotNull);
+    expect(controller.configurationUpdate.value!.updateId, 'UPD-TEST-01');
+    expect(fakeWalletSdk.configurationUpdateCalls, 1);
+  });
 }
 
 final class _FakeWalletSdk implements WalletSdk {
+  @override
+  Future<String> createRewardsBackup(String password) async =>
+      throw UnsupportedError('Recovery fixture not configured');
+  @override
+  Future<void> confirmRewardsBackup(String backup, String password) async =>
+      throw UnsupportedError('Recovery fixture not configured');
+  @override
+  Future<void> restoreRewardsBackup(String backup, String password) async =>
+      throw UnsupportedError('Recovery fixture not configured');
+  @override
+  Future<void> eraseRewardsFromDevice() async =>
+      throw UnsupportedError('Recovery fixture not configured');
+  @override
+  Future<RewardsTransferOutcome?> resolvePendingRewardsTransfer({
+    String? competingTransactionHash,
+  }) async => transferOutcome;
+  @override
+  Future<AppMasterRosterPage> getAppMasterRoster({
+    String? cursor,
+    int limit = 20,
+  }) async {
+    throw const WalletSdkException(
+      code: WalletSdkFailureCode.rosterNotConfigured,
+      safeMessage: 'App Master roster service is not configured.',
+      canRetry: false,
+    );
+  }
+
+  RewardsAccessState access = RewardsAccessState.locked;
+  @override
+  Future<RewardsAccessState> getRewardsAccessState() async => access;
+  @override
+  Future<void> lockRewards() async {
+    access = RewardsAccessState.locked;
+  }
+
+  @override
+  Future<void> unlockRewards() async {
+    access = RewardsAccessState.unlocked;
+  }
+
+  @override
+  Future<void> removeRewardsAccess() async {
+    access = RewardsAccessState.removed;
+  }
+
+  RewardsTransferOutcome? transferOutcome;
+  @override
+  Future<RewardsTransferOutcome?> getRewardsTransferStatus({
+    bool reconcile = false,
+  }) async => transferOutcome;
+  @override
+  Future<RewardsTransferOutcome> approveRewardsTransfer(
+    String reviewId,
+  ) async => transferOutcome = RewardsTransferOutcome(
+    reviewId: reviewId,
+    transactionHash: 'test-hash',
+    publicAccount: preparedReview!.publicAccount,
+    assetCode: 'RWD',
+    amount: preparedReview!.amount,
+    state: RewardsTransferState.confirmed,
+  );
+  @override
+  Future<RewardsTransferAuthorization> authorizeRewardsTransfer(
+    String reviewId,
+  ) async => RewardsTransferAuthorization(
+    reviewId: reviewId,
+    expiresAt: DateTime.utc(2026, 10, 3, 12),
+  );
+  @override
+  Future<void> cancelRewardsTransferAuthorization() async {}
+  RewardsTransferReview? preparedReview;
+  @override
+  Future<RewardsTransferReview> prepareRewardsTransfer({
+    required String publicAccount,
+    required String amount,
+  }) async {
+    return preparedReview = RewardsTransferReview(
+      reviewId: 'test-review',
+      publicAccount: publicAccount,
+      environment: ProviderEnvironment.test,
+      assetCode: 'RWD',
+      assetIssuer: 'public-issuer',
+      amount: amount,
+      maximumFee: '0.00001',
+      expiresAt: DateTime.utc(2026, 10, 3, 12),
+    );
+  }
+
+  @override
+  Future<RewardsTransferReview> getPreparedRewardsTransfer(
+    String reviewId,
+  ) async => preparedReview!;
+  @override
+  Future<RewardsRecipientView> inspectRewardsRecipient(
+    String publicAccount,
+  ) async => RewardsRecipientView(
+    publicAccount: publicAccount,
+    environment: ProviderEnvironment.test,
+    assetCode: 'RWD',
+    receivingCapacity: '100',
+    observedAt: DateTime.utc(2026, 10, 3),
+  );
+  bool historyEmpty = false;
+  bool historyShouldFail = false;
+  @override
+  Future<RewardsHistoryPage> getRewardsHistory({
+    String? cursor,
+    int limit = 20,
+  }) async {
+    if (historyShouldFail) {
+      throw const WalletSdkException(
+        code: WalletSdkFailureCode.rewardsHistoryUnavailable,
+        safeMessage: 'History unavailable.',
+        canRetry: true,
+      );
+    }
+    return RewardsHistoryPage(
+      publicAccount: 'test-public-account',
+      environment: ProviderEnvironment.test,
+      assetCode: 'RWD',
+      observedAt: DateTime.utc(2026, 10, 3),
+      nextCursor: !historyEmpty && cursor == null ? 'next-test-page' : null,
+      items: <RewardsHistoryItem>[
+        if (!historyEmpty)
+          RewardsHistoryItem(
+            id: cursor == null ? 'first' : 'second',
+            direction: RewardsHistoryDirection.received,
+            amount: cursor == null ? '2' : '3',
+            counterparty: 'test-counterparty',
+            createdAt: DateTime.utc(2026, 10, 3),
+          ),
+      ],
+    );
+  }
+
+  bool balanceShouldFail = false;
+  @override
+  Future<RewardsBalanceView> getRewardsBalance() async {
+    if (balanceShouldFail) {
+      throw const WalletSdkException(
+        code: WalletSdkFailureCode.rewardsBalanceUnavailable,
+        safeMessage: 'Balance unavailable.',
+        canRetry: true,
+      );
+    }
+    return RewardsBalanceView(
+      publicAccount: 'test-public-account',
+      environment: ProviderEnvironment.test,
+      assetCode: 'RWD',
+      total: '10',
+      available: '9.5',
+      observedAt: DateTime.utc(2026, 10, 3),
+    );
+  }
+
+  bool receiveShouldFail = false;
+  @override
+  Future<RewardsReceiveView> getRewardsReceiveIdentity() async {
+    if (receiveShouldFail) {
+      throw const WalletSdkException(
+        code: WalletSdkFailureCode.unavailable,
+        safeMessage: 'Receiving details unavailable.',
+        canRetry: true,
+      );
+    }
+    return const RewardsReceiveView(
+      publicAccount: 'test-public-account',
+      qrValue: 'test-public-account',
+      environment: ProviderEnvironment.test,
+      assetCode: 'RWD',
+    );
+  }
+
   int cancelCalls = 0;
   bool cancelShouldFail = false;
   int providerSaveCalls = 0;
@@ -330,6 +769,8 @@ final class _FakeWalletSdk implements WalletSdk {
   bool providerSaveShouldFail = false;
   bool inspectShouldFail = false;
   ActivationRequestReview? restoredReview;
+  int configurationApplyCalls = 0;
+  int configurationUpdateCalls = 0;
 
   static final ActivationRequestReview review = ActivationRequestReview(
     requestId: 'ACT-TEST-01',
@@ -356,11 +797,18 @@ final class _FakeWalletSdk implements WalletSdk {
   );
 
   @override
-  Future<ConfigurationOutcome> applyConfigurationUpdate(
-    String updateId,
-  ) async => const ConfigurationOutcome(
-    status: ProviderConfigurationStatus.notConfigured(),
-  );
+  Future<ConfigurationOutcome> applyConfigurationUpdate(String updateId) async {
+    configurationApplyCalls++;
+    return ConfigurationOutcome(
+      status: ProviderConfigurationStatus(
+        state: ProviderConfigurationState.ready,
+        environment: ProviderEnvironment.test,
+        version: 2,
+        endpointHost: 'xlm.nownodes.io',
+        lastCheckedAt: DateTime.utc(2026, 10, 2),
+      ),
+    );
+  }
 
   @override
   Future<ConfigurationRequestView> createConfigurationRequest() async =>
@@ -373,12 +821,15 @@ final class _FakeWalletSdk implements WalletSdk {
   @override
   Future<ConfigurationUpdateView> createConfigurationUpdate(
     String requestId,
-  ) async => ConfigurationUpdateView(
-    updateId: 'UPD-TEST-01',
-    requestId: requestId,
-    qrValue: 'opaque-configuration-update',
-    expiresAt: DateTime(2030),
-  );
+  ) async {
+    configurationUpdateCalls++;
+    return ConfigurationUpdateView(
+      updateId: 'UPD-TEST-01',
+      requestId: requestId,
+      qrValue: 'opaque-configuration-update',
+      expiresAt: DateTime(2030),
+    );
+  }
 
   @override
   Future<ConfigurationRequestReview> inspectConfigurationRequest(

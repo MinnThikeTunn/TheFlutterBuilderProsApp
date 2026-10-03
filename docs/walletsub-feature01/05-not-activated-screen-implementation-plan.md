@@ -1,7 +1,9 @@
 # Rewards — Not Activated: First Functional Implementation Plan
 
-Status: first functional slice implemented and verified on 2026-09-18. App Master
-request processing and Builder response completion remain future slices.
+Status: first functional slice implemented and verified on 2026-09-18. Subsequent
+Wallet SDK Steps 2–14 completed the App Master and Builder response paths. This
+file remains the historical plan for the not-activated slice. Current runtime:
+`context/current-state.md`. Full step history: `stepbystep.md`.
 
 ## Objective
 

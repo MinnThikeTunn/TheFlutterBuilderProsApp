@@ -1,5 +1,12 @@
 # Rewards First-Time Activation Specification V2
 
+## Status
+
+Product specification for first-time activation. **Implemented** through Wallet SDK
+Steps 1–14 and the Builder / App Master Flutter surfaces as of 2026-09-20. Runtime
+truth: `context/current-state.md`. Step gates:
+`docs/walletsub-feature01/stepbystep.md`.
+
 ## Product decision
 
 First-time Rewards activation is a phone-to-phone QR handshake between the Builder

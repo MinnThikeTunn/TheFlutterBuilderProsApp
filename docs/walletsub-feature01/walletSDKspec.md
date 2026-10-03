@@ -2,6 +2,206 @@
 
 ## 1. Purpose
 
+### Daily Rewards receive slice (implemented 2026-10-03)
+
+`getRewardsReceiveIdentity()` returns `RewardsReceiveView` containing the public
+account, opaque QR value, environment, and activation asset code. It requires
+verified submission evidence matching the protected active-account record.
+The current QR is the exact public account address and contains no private material.
+The account QR does not encode network/asset intent; recipient inspection
+validates compatibility using the SDK's App Master-authorized runtime settings.
+Do not interpret it as an instruction to send an arbitrary asset.
+
+Missing or mismatched active identity returns a safe `unavailable` failure.
+Legacy verified installations without the new record trigger validated lazy
+migration. The SDK rechecks retained authorized response/device binding and exact
+transaction hash against live ledger state through the current provider. It checks
+signing credential ownership and persists protected identity without replacing
+provider settings, deleting evidence, creating an account, or submitting activation.
+Offline, missing, or altered evidence remains safely unavailable and retryable.
+Testnet transfer signing/submission and local lock/access removal are implemented.
+Production sends, permanent key erasure, and off-device recovery remain blocked
+or undesigned.
+
+### Protected transfer authorization (implemented 2026-10-03)
+
+### Testnet transfer approval and status (implemented 2026-10-03)
+
+`approveRewardsTransfer(reviewId)` authenticates the retained exact review,
+revalidates ledger funds/capacity/sequence/fees, verifies protected credential
+ownership and current source medium-threshold authority, and signs one payment
+in the activated asset. Source sequence increments once; the envelope has the
+reviewed fee and review-expiry time bound. Production sending is rejected before
+authentication/signing pending physical-device and independent security evidence.
+
+The SDK writes/read-verifies a protected record containing transaction hash and
+public intent before one POST. No signed envelope or secret is persisted in this
+record. It revalidates after the write and consumes private approval immediately
+before POST; cancellation or changed state prevents submission. A write failure
+prevents POST. Repeated approval of the latest saved review returns its outcome.
+
+`getRewardsTransferStatus({bool reconcile = false})` restores the latest saved
+`RewardsTransferOutcome`, or null when absent. With `reconcile: true`, pending
+evidence is checked through `GET /transactions/{hash}` only. Outcomes contain
+review ID, hash, recipient, asset code, amount, and confirmed/failed/cancelled/
+uncertain state. Exact source, sequence, fee, time bound, payment intent, network
+hash, and source signature must match returned ledger evidence. Only then does
+the ledger `successful` value yield confirmed or failed. Cancelled means the SDK
+durably recorded cancellation before POST.
+
+Timeout, 404, non-matching/malformed evidence, and terminal-status storage failure
+remain uncertain. Pending evidence blocks new preparation/submission across
+restart. Expiry alone never clears uncertainty; recovery for a never-ingested or
+pruned transaction remains an explicit future policy decision. The UI offers
+status checks, never blind resubmission. Stable errors include
+`rewardsSendUnavailable` and `rewardsTransferPending`.
+Ledger fields follow the [Horizon transaction schema](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/transactions/object).
+
+### Protected transfer authorization (implemented 2026-10-03)
+
+`authorizeRewardsTransfer(reviewId)` resolves the private prepared review, rereads
+the recipient and source/fees before and after a native device authentication
+prompt, and rejects changed sequence, insufficient Rewards/capacity/native funds,
+fee increase, identity/provider mismatch, or expiry. It uses biometric or native
+device PIN/passcode fallback. It does not accept a UI authentication boolean.
+`RewardsTransferAuthorization` returns informational review ID/expiry only; it is
+never accepted as signing evidence. A private single-use grant binds the exact
+retained review and expires within 30 seconds or review expiry, whichever is first.
+
+`cancelRewardsTransferAuthorization()` invalidates the review/grant and requests
+native prompt cancellation. Late successes cannot restore approval. Replacement,
+expiry and paused/hidden/detached lifecycle states revoke private grants. Inactive
+native-dialog state is permitted. Prompts do not resume across backgrounding.
+`rewardsAuthorizationDenied` describes native false results;
+`rewardsAuthorizationUnavailable` safely masks platform errors/unsupported setup.
+Invalid/changed/cancelled reviews use `invalidRewardsTransferReview`.
+
+This is an application-layer device-owner check, not identity verification or
+hardware-bound seed use. Local session/removal contracts are defined below.
+Testnet approval revalidates and consumes the private grant exactly once at
+the submission boundary after durable public transaction evidence is written.
+Native setup follows the [Flutter local_auth documentation](https://pub.dev/packages/local_auth/versions/3.0.1),
+including [Android integration](https://pub.dev/packages/local_auth_android) and
+[Apple Face ID configuration](https://pub.dev/packages/local_auth_darwin).
+
+### Local access lifecycle (implemented 2026-10-03)
+
+`getRewardsAccessState()` returns locked/unlocked/removed. `lockRewards()` revokes
+reviews, in-flight preparation and private approval. Sessions start locked on
+restart, last five minutes in memory, and relock on paused/hidden/detached states.
+Native-dialog inactivity is permitted. `unlockRewards()` authenticates device
+ownership; it never grants payment approval. A successful exact transfer prompt
+may open access, but every payment still authenticates its review separately.
+Public reads remain available while locked. Session validity is checked at POST;
+locking after POST cannot retract an already submitted transaction.
+
+`removeRewardsAccess()` authenticates, checks unresolved-send and identity state
+before/after the prompt, and writes/read-verifies one protected disabled marker.
+It blocks Rewards reads and new Builder activation/signing across restart. It
+retains the protected signing credential, active identity, configuration, activation
+and transaction evidence. No account closure, seed destruction, balance transfer,
+or off-device recovery is implied. The UI clears derived daily-operation data and
+routes to native restoration. `unlockRewards()` restores only the retained matching
+account. Pending/uncertain transfers block removal. Partial writes can already have
+disabled access despite an error; inspect saved state. Corrupt/unreadable marker
+fails closed. These guarantees are enforced by SDK methods independently of
+navigation/role switching. Errors use `rewardsAccessRemoved` and
+`rewardsAccessUnavailable`. Physical-device/security evidence remains open.
+
+### Transfer preparation (implemented 2026-10-03)
+
+`prepareRewardsTransfer(publicAccount: ..., amount: ...)` accepts an exact positive
+decimal amount (at most seven decimals, signed 64-bit units) and a public receiving
+account. It returns immutable `RewardsTransferReview`: random review ID, recipient,
+network, activated asset code/issuer, canonical amount, maximum native XLM fee bid,
+and expiry. Public data contains no credentials or envelope.
+
+Fresh recipient and sender reads check receiving capacity and spendable Rewards.
+Sender native balance subtracts selling liabilities and
+`(2 + subentry_count + num_sponsoring - num_sponsored) * base_reserve_in_stroops`.
+The fee must fit the remaining native funds. The one-payment bid is the maximum of
+latest ledger base fee, fee-stats base fee, and fee-charged p95; values must fit
+unsigned 32-bit fee encoding. Source sequence must permit a next signed 64-bit
+sequence. Reads use bounded shared transport and a 15-second combined deadline.
+These are separate ledger observations, not an atomic multi-account snapshot.
+
+One private exact intent is retained per SDK instance for two minutes from start.
+Concurrent preparation is rejected; replacement/failed preparation invalidates
+old intent. `getPreparedRewardsTransfer(reviewId)` validates ID, expiry, identity,
+and provider configuration, returning that same immutable review. Reviews are not
+persisted and require preparation after restart. It does not recheck ledger funds
+or authorize/sign/submit; `approveRewardsTransfer` performs those checks.
+
+Stable errors include `invalidRewardsAmount`, `insufficientRewardsFunds`,
+`insufficientRewardsFeeFunds`, `rewardsTransferPreparationUnavailable`, and
+`invalidRewardsTransferReview`, plus existing recipient/identity errors.
+Fee/reserve fields follow the [ledger schema](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/ledgers/object)
+and [fee stats schema](https://developers.stellar.org/docs/data/apis/horizon/api-reference/aggregations/fee-stats/object).
+
+### Recipient inspection (implemented 2026-10-03)
+
+`inspectRewardsRecipient(publicAccount)` accepts a trimmed public G address with
+valid StrKey checksum. Returns `RewardsRecipientView` with public account,
+environment, activated asset code, exact receiving capacity, and UTC observation
+time. It requires verified active identity and matching provider environment,
+reads the destination account through shared transport, and rechecks identity and
+provider configuration after the read. It matches exactly one authorized asset
+trustline and subtracts balance and buying liabilities from limit with integer
+seven-decimal precision. Bounded to 128 KiB and 12 seconds.
+
+Invalid/self/missing/unsupported destinations use `invalidRewardsRecipient`;
+service/malformed failures use retryable `rewardsRecipientUnavailable`; identity
+failures preserve their safe identity code. No raw provider messages are exposed.
+Memo-routed accounts and issuer returns are unsupported in the address-only slice.
+This view is not a transfer review; preparation must reread recipient and funds.
+Capacity follows the [Horizon account schema](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/accounts/object).
+
+### Daily Rewards balance slice (implemented 2026-10-03)
+
+`getRewardsBalance()` returns immutable `RewardsBalanceView` with public account,
+environment, activation asset code, exact decimal `total` and `available` strings,
+and `observedAt`. Protected active identity must match verified activation evidence,
+and provider configuration must match its environment. The SDK privately selects
+the exact App Master-authorized code/issuer; it does not infer Rewards from other
+account assets. It rejects malformed, ambiguous, or missing trustline data.
+
+Amounts use integer decimal units with at most seven decimal places. Available
+Rewards subtract selling liabilities and are zero for an unauthorized trustline.
+This read does not authorize sending or account for native transfer fees.
+The private client uses shared transport with a 128 KB response cap and 12-second
+operation deadline. It returns no raw provider data or credentials to Flutter.
+
+`rewardsIdentityUnavailable` clears displayed identity-bound data;
+`rewardsBalanceUnavailable` permits a previous balance to remain explicitly stale.
+Overview shows observation time, loading, refresh failure, and retry. The cache is
+in-memory only. Legacy identity migration is shared with the Receive path.
+
+Field reference: [official Horizon account object](https://developers.stellar.org/docs/data/apis/horizon/api-reference/resources/accounts/object).
+
+### Daily Rewards history slice (implemented 2026-10-03)
+
+`getRewardsHistory({cursor, limit = 20})` returns an immutable `RewardsHistoryPage`
+with safe payment items, exact amounts, public counterparties, UTC timestamps,
+observation time, and an opaque next cursor. Limits are 1–50 raw records per read.
+Cursor scope binds account, network, code/issuer, page size, and descending position.
+The client constructs its own request query and never follows provider link URLs.
+
+History currently includes successful direct `payment` operations in the activated
+asset only. Path payments, other operation types/assets, and local pending/rejected
+attempts are excluded. Incoming/outgoing/self direction is explicit; no private
+identity directory or invented counterparty name is used. Filtered pages may be empty
+and still have a next cursor. Pagination progresses over raw records, rejects
+non-descending/duplicate positions, and ends on a short or empty raw page.
+
+Reads use current protected provider settings, a 256 KB response cap, and a
+12-second total request deadline. The facade verifies activation/configuration and
+rechecks identity after reads. `invalidRewardsHistoryCursor` asks for refresh;
+`rewardsHistoryUnavailable` retains explicitly stale rows; identity failure clears
+the cache. UI data is in memory and refresh replaces pages. No history persistence
+or live event stream is implemented.
+
+Endpoint reference: [official account payments API](https://developers.stellar.org/docs/data/apis/horizon/api-reference/get-payments-by-account-id).
+
 `WalletSdk` is the only Rewards integration boundary visible to Flutter features.
 It exposes simple product operations and safe view models. All Stellar protocol,
 cryptography, XDR, Horizon HTTP, provider authentication, secure storage,
@@ -69,27 +269,40 @@ Rules:
 
 ## 4. Public application interface
 
+The Dart facade in `lib/wallet_sdk/wallet_sdk.dart` is authoritative. The sketch
+below mirrors the implemented surface as of 2026-09-20.
+
 ```dart
 abstract interface class WalletSdk {
   Future<ActivationRequestView> startActivation(BuilderIdentity builder);
   Future<ActivationRequestView?> restoreActivationRequest();
+  Future<void> cancelActivation();
   Future<ActivationRequestReview> inspectBuilderRequest(String qrValue);
+  Future<ActivationRequestReview?> restoreInspectedBuilderRequest();
   Future<ActivationResponseView> approveBuilderRequest(String requestId);
   Future<ActivationReview> inspectActivationResponse(String qrValue);
   Future<ActivationOutcome> approveActivation(String responseId);
-  Future<ActivationStatus> getActivationStatus();
-  Future<void> cancelActivation();
+  Future<WalletActivationStatus> reconcileActivation();
+  Future<WalletActivationStatus> getActivationStatus();
   Future<ConfigurationRequestView> createConfigurationRequest();
   Future<ConfigurationRequestReview> inspectConfigurationRequest(String qrValue);
   Future<ConfigurationUpdateView> createConfigurationUpdate(String requestId);
   Future<ConfigurationReview> inspectConfigurationUpdate(String qrValue);
   Future<ConfigurationOutcome> applyConfigurationUpdate(String updateId);
+  Future<DistributorAuthorityStatus> importDistributorSecret(String secret);
+  Future<DistributorAuthorityStatus> getDistributorAuthorityStatus();
+  Future<void> removeDistributorAuthority();
+  Future<AppMasterOverview> getAppMasterOverview();
   Future<ProviderConfigurationOutcome> saveAppMasterProviderConfiguration(
     ProviderConfigurationInput input,
   );
   Future<ProviderConfigurationStatus> getProviderConfigurationStatus();
 }
 ```
+
+Configuration-request/update methods are implemented in the SDK. Flutter screens
+for that rotation handshake are not yet wired. See `01-screen-list.md` and
+`analysis-report.md`.
 
 Application-facing objects contain only display-ready product data, stable IDs,
 opaque QR strings, expiry, safe status enums, retry flags, and support references.
@@ -100,6 +313,10 @@ fees, operation names, Horizon records, or provider response bodies.
 the endpoint, masked-field API-key value, environment, and next configuration
 version. The controller passes it directly to the SDK and immediately clears the
 field. The SDK returns only a safe status; it never returns the API key.
+
+App Master Advanced also accepts a distributor secret through
+`importDistributorSecret` under the same clear-after-submit rule. Flutter receives
+only masked safe status.
 
 ## 5. Private SDK modules
 
@@ -565,3 +782,28 @@ network-passphrase transaction hashing, Ed25519 signature hints/signing/verifica
 and preservation of existing signatures. It is private SDK protocol infrastructure
 only; Step 11 remains responsible for building and signing the policy-approved live
 activation response.
+## Host-injected Builder-access roster — 2026-10-03
+
+Bootstrap with `createWalletSdk(rosterProvider: provider)`. The provider implements `AppMasterRosterProvider.loadAuthorizedPage`; it receives environment, public authority account, limit and opaque cursor, and must authorize every request at the backend. Call `WalletSdk.getAppMasterRoster` from features. Pages contain public Builder identity, application access state and UTC timestamps. The SDK validates scope and pagination and masks provider errors. Missing configuration is a typed error, not a sample roster. No backend provider is shipped; this implementation has not been verified yet.
+## Activation settings and asset-based Builder list — 2026-10-03
+
+App Master Advanced now edits account funding and initial Rewards points with the service configuration. The SDK parses up to seven decimal places, requires account funding of at least 1.5 and positive initial Rewards, persists both in protected configuration, provisions them in the encrypted activation response, and verifies the signed operations against that response's policy. Existing configurations retain defaults of 2.1 funding and 1 point. Capacity considers both available funding and Rewards. Saving requires the service settings/API key and performs the existing service health check.
+
+The Builder list now queries the configured network for accounts with the distributor's single Rewards asset trustline, using the existing SDK transport. It displays public account references, actual Rewards balances and restricted status derived from asset authorization. No membership backend or host roster provider is required. All matching trustlines are listed, not only accounts activated through this app; names/phone numbers are not inferred from public accounts. Pagination binds network, configuration version, authority and exact asset. The earlier host-provider design and its backend requirement are superseded.
+
+Implementation is unverified: tests, analysis and builds are deferred at the user's request. Recovery export/permanent erasure and release gates remain outstanding.
+## Send configuration policy update — 2026-10-03
+
+Removed the test-only Send restriction from both the facade and private send service. Send uses the existing App Master-provisioned environment for signing and transaction hashing; reconciliation already uses the record's environment. Identity, review and configuration must agree. Native authentication, funds/recipient validation, exact-review approval and durable duplicate-send protection remain enforced. Security review/testing are release work, not an SDK production-network switch. Earlier statements that production sending is blocked are superseded. Added fixture coverage for production signing and network mismatch; it has not been run. Verification remains deferred by user instruction.
+
+Remaining feature gaps: off-device recovery/backup and permanent credential erasure need the concrete authorized vault and custody policy. Uncertain sends reconcile by original hash and remain pending without authoritative resolution; a terminal recovery/support path for never-confirmed sends is not implemented. GitHub push remains paused at the user's instruction. No network-settings decision is needed for this change.
+## Agreed remaining scope — user-held recovery (2026-10-03)
+
+The user selected a lightweight non-custodial design: Back up Rewards, Restore Rewards and Remove from this device. A Builder keeps their own backup; no external vault or App Master custody of Builder keys is required. Existing random-key accounts must keep the same identity. Backup confirmation precedes permanent local removal; removal does not destroy the account or its points. Implement through a dedicated SDK-controlled backup boundary rather than exposing keys through ordinary feature models. Uncertain-send recovery remains a separate implementation item.
+
+These are planned features, not completed functionality. The obsolete vault dependency is removed. The earlier automatic rejection of unspecified seed export/erasure is historical and has not itself been overturned. No additional product-policy answer is needed to prepare the concrete user-held implementation; any new tool rejection must be handled on its actual terms. Verification remains deferred. The detailed remaining scope is maintained in `docs/walletsub-feature01/remaining-features-implementation-3oct.md`.
+## Recovery implementation update — 2026-10-03
+
+User-held encrypted BRB1 backup creation, same-key backup confirmation/import, authenticated permanent device removal with durable disabled markers, and ledger-proof pending-send resolution are now implemented in SDK and app UI. Recovery fields live in an SDK-owned page and no plaintext signing key enters feature state. Fresh restores can request App Master settings with initial version zero; service/API credentials are not exported. Native authentication and current-backup verification protect removal; public account/evidence remain for restoration. Unavailable/unsupported ledger proof keeps sends pending. The earlier vault dependency is obsolete.
+
+Verification is deferred. The user explicitly authorized a user-triggered Copy encrypted backup button; it now copies only encrypted BRB1 text, never the plaintext signing key or password. The earlier clipboard approval blocker is resolved for this exact action. The implemented scope and remaining checks are maintained in `docs/walletsub-feature01/remaining-features-implementation-3oct.md`. Earlier planned/unimplemented recovery descriptions are superseded. GitHub push remains paused.

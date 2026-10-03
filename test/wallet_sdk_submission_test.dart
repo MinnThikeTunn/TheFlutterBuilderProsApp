@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:the_builder_pros/wallet_sdk/src/configuration/provider_configuration.dart';
@@ -9,6 +10,8 @@ import 'package:the_builder_pros/wallet_sdk/src/transport/activation_reconciliat
 import 'package:the_builder_pros/wallet_sdk/wallet_sdk.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUp(() => FlutterSecureStorage.setMockInitialValues(<String, String>{}));
   final ProviderConfiguration configuration = ProviderConfiguration(
     endpoint: Uri.parse('https://xlm.nownodes.io'),
     apiKey: 'secret-key',

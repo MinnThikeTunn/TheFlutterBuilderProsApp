@@ -72,6 +72,11 @@ class WalletNotActivatedScreen extends BaseView<WalletController> {
         ),
       ),
       const SizedBox(height: 16),
+      OutlinedButton.icon(
+        onPressed: controller.openRewardsRecovery,
+        icon: const Icon(Icons.restore),
+        label: const Text('Restore Rewards from backup'),
+      ),
       const WalletPreviewNotice(),
     ],
   );
