@@ -59,4 +59,16 @@ try {
     Pop-Location
 }
 
+# 4. Save Installation State
+$rewardsDir = Join-Path $RepoRoot ".rewards"
+if (-not (Test-Path $rewardsDir)) {
+    New-Item -ItemType Directory -Path $rewardsDir -Force | Out-Null
+}
+$installedJson = @{
+    installedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    packagePath = "packages/rewards_sdk"
+    version = "0.1.0"
+} | ConvertTo-Json
+Set-Content -Path (Join-Path $rewardsDir "installed.json") -Value $installedJson
+
 Write-Host "`n[BOOTSTRAP COMPLETE] All dependencies resolved and toolchains ready." -ForegroundColor Green

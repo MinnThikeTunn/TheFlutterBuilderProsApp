@@ -19,7 +19,8 @@ A deterministic, multi-stage workflow guide and automation suite for integrating
 - [00-preflight.md](file:///D:/TheFlutterBuilderProsApp/skills/rewards-build/stages/00-preflight.md): Environment verification, toolchain checks, and repository branch setup.
 - [01-sandbox.md](file:///D:/TheFlutterBuilderProsApp/skills/rewards-build/stages/01-sandbox.md): Walking through all 6 headless flows in-memory with zero network calls.
 - [02-testnet.md](file:///D:/TheFlutterBuilderProsApp/skills/rewards-build/stages/02-testnet.md): Live Stellar Testnet integration, Friendbot funding, and authority seeding.
-- [03-production.md](file:///D:/TheFlutterBuilderProsApp/skills/rewards-build/stages/03-production.md): Mainnet custody, multi-signature policies, security hardening, and production gates.
+- [03-ui-integration.md](file:///D:/TheFlutterBuilderProsApp/skills/rewards-build/stages/03-ui-integration.md): Binding custom presentation layers (GetX, Bloc, Riverpod) to headless SDK APIs.
+- [04-production.md](file:///D:/TheFlutterBuilderProsApp/skills/rewards-build/stages/04-production.md): Mainnet custody, multi-signature policies, security hardening, and production gates.
 
 ## Automation Scripts
 
