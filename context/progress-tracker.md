@@ -1,11 +1,40 @@
 # Progress Tracker
 
-Last synchronized: 2026-10-03
+Last synchronized: 2026-11-18
 
 Current runtime facts and limitations are maintained in `current-state.md`.
 Doc/code mismatch analysis: `docs/walletsub-feature01/analysis-report.md`.
 
+## Active
+
+(No active blocking items; rewards-build implementation completed and verified)
+
 ## Completed
+
+### Rewards Build Full Implementation & Verification (2026-11-18)
+- **Step 1 (Baseline Hygiene & Branching)**: Switched to `feature/rewards-build`, resolved unawaited future at line 1381, cleaned up 33 brace lints, and formatted.
+- **Step 2 (Headless Package Extraction)**: Created `packages/rewards_sdk/`, extracted headless SDK from `lib/wallet_sdk/`, established re-export shims at root, linked root `pubspec.yaml` via `path: packages/rewards_sdk`, migrated all 127 unit tests.
+- **Step 3 (Sandbox Completion)**: Built `SeedableSandbox` (`packages/rewards_sdk/lib/sandbox.dart`), implemented in-memory mutable stores and simulated Horizon transport (`SandboxTransport`) handling accounts, fee stats, ledgers, transactions, and payments. Created `sandbox_test.dart` walking all 6 flows end-to-end in < 1s with 0 network calls and verifying `failNext` and `reset`. All 130 package tests passing.
+- **Step 4 (Minimal Reference Harness)**: Created `templates/rewards_harness/` with standalone CLI (`bin/main.dart`), full smoke test (`test/smoke_test.dart`), and one-command runner (`run.ps1`).
+- **Step 5 (Testnet Automation Tool & Wrapper)**: Built `packages/rewards_sdk/tool/seed_testnet.dart` and wrapper `skills/rewards-build/scripts/seed-testnet.ps1` with exponential backoff on Friendbot rate limits (429), creating testnet Issuer and Distributor accounts, establishing trustline, minting 100k tokens, and saving `.secrets/testnet-authority.json` (gitignored).
+- **Step 6 (Guided Skill Suite)**: Created `skills/rewards-build/` with `SKILL.md` (`disable-model-invocation: true`), all 4 workflow stages (`00-preflight.md` to `03-production.md`), automation scripts (`bootstrap.ps1`, `verify.ps1`, `seed-testnet.ps1`), and reference guides (`sdk-contract.md`, `failure-codes.md`, `native-setup.md`, `ui-recipes.md`).
+- **Step 7 (Packaging, Licensing & CI)**: Implemented cross-platform LF-normalized SHA-256 hash generator in `packages/rewards_sdk/tool/package_release.dart`, generated `packages/rewards_sdk/license.json`, added automated integrity check to `verify.ps1`, and created CI workflow `.github/workflows/rewards_build.yml`.
+- Verification: `.\skills\rewards-build\scripts\verify.ps1 -Act 1` passed with 0 errors across all 7 checks.
+
+### Rewards SDK Headless Package Extraction (2026-11-18)
+- Extracted `lib/wallet_sdk/` into standalone Flutter package `packages/rewards_sdk/`.
+- Configured isolated `pubspec.yaml`, `analysis_options.yaml` (with strict casts/inference/types), and public facade `lib/rewards_sdk.dart`.
+- Rewrote internal imports to `package:rewards_sdk/`.
+- Migrated 127 SDK unit & protocol tests into `packages/rewards_sdk/test/` (100% passing).
+- Configured `the_builder_pros` app to consume `rewards_sdk` via `path: packages/rewards_sdk`.
+- Provided backwards-compatible re-export shims in `lib/wallet_sdk/wallet_sdk.dart`, `app_master_roster.dart`, and `rewards_recovery_page.dart`.
+- Verified clean analysis and 100% pass rate on root app integration tests (`wallet_flow_test.dart`, `qr_input_adapter_test.dart`, `wallet_sdk_import_boundary_test.dart`).
+
+### Rewards SDK Baseline Hygiene & Branching (2026-11-18)
+- Created working branch `feature/rewards-build`.
+- Resolved `unawaited_return_in_try_block` warning in `lib/wallet_sdk/src/default_wallet_sdk.dart:1381` (`approveBuilderRequest`).
+- Cleaned up 33 `curly_braces_in_flow_control_structures` lints across `lib/wallet_sdk/`.
+- Verified 100% clean analysis (`flutter analyze lib/wallet_sdk` exit code 0, 0 issues) and passing unit test suites.
 
 ### Controlled wallet app integration coverage (2026-10-03)
 

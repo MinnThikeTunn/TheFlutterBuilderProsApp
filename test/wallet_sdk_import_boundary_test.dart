@@ -9,7 +9,11 @@ void main() {
         .whereType<File>()
         .where((File file) => file.path.endsWith('.dart'))
         .where(
-          (File file) => file.readAsStringSync().contains('wallet_sdk/src/'),
+          (File file) {
+            final content = file.readAsStringSync();
+            return content.contains('wallet_sdk/src/') ||
+                content.contains('rewards_sdk/src/');
+          },
         )
         .map((File file) => file.path)
         .toList();

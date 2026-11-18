@@ -20,7 +20,8 @@ dependency injection, and reactive state.
 
 The initial route opens the wallet-owned not-activated Rewards screen. Explicit
 role-switch controls expose App Master surfaces for dual-role testing. The
-production SDK facade lives under `lib/wallet_sdk/`; feature code imports only its
+production SDK lives as the standalone headless package `packages/rewards_sdk/`, with
+compatibility re-export shims maintained under `lib/wallet_sdk/`; feature code imports only its
 safe public API.
 
 Wallet SDK Steps 1–16 are implemented. Steps 1–9 are device verified. Steps 10–16

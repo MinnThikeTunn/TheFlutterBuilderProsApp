@@ -8,17 +8,17 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:the_builder_pros/app/constant/routing/app_route.dart';
 import 'package:the_builder_pros/app/features/wallet/controller/wallet_controller.dart';
 import 'package:the_builder_pros/main_app.dart';
-import 'package:the_builder_pros/wallet_sdk/src/authorization/transfer_authorization_service.dart';
-import 'package:the_builder_pros/wallet_sdk/src/configuration/provider_configuration.dart';
-import 'package:the_builder_pros/wallet_sdk/src/crypto/wallet_key_generator.dart';
-import 'package:the_builder_pros/wallet_sdk/src/default_wallet_sdk.dart';
-import 'package:the_builder_pros/wallet_sdk/src/protocol/stellar_activation_protocol.dart';
-import 'package:the_builder_pros/wallet_sdk/src/storage/active_rewards_store.dart';
-import 'package:the_builder_pros/wallet_sdk/src/storage/activation_submission_store.dart';
-import 'package:the_builder_pros/wallet_sdk/src/storage/configuration_store.dart';
-import 'package:the_builder_pros/wallet_sdk/src/storage/credential_store.dart';
-import 'package:the_builder_pros/wallet_sdk/src/storage/rewards_send_store.dart';
-import 'package:the_builder_pros/wallet_sdk/src/transport/horizon_http_client.dart';
+import 'package:rewards_sdk/src/authorization/transfer_authorization_service.dart';
+import 'package:rewards_sdk/src/configuration/provider_configuration.dart';
+import 'package:rewards_sdk/src/crypto/wallet_key_generator.dart';
+import 'package:rewards_sdk/src/default_wallet_sdk.dart';
+import 'package:rewards_sdk/src/protocol/stellar_activation_protocol.dart';
+import 'package:rewards_sdk/src/storage/active_rewards_store.dart';
+import 'package:rewards_sdk/src/storage/activation_submission_store.dart';
+import 'package:rewards_sdk/src/storage/configuration_store.dart';
+import 'package:rewards_sdk/src/storage/credential_store.dart';
+import 'package:rewards_sdk/src/storage/rewards_send_store.dart';
+import 'package:rewards_sdk/src/transport/horizon_http_client.dart';
 import 'package:the_builder_pros/wallet_sdk/wallet_sdk.dart';
 
 Future<void> settle(WidgetTester tester) async {

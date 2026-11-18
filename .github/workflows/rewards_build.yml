@@ -1,0 +1,47 @@
+name: Rewards Build CI
+
+on:
+  push:
+    branches:
+      - main
+      - feature/rewards-build
+    paths:
+      - 'packages/rewards_sdk/**'
+      - 'templates/rewards_harness/**'
+      - 'skills/rewards-build/**'
+      - 'lib/wallet_sdk/**'
+      - '.github/workflows/rewards_build.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'packages/rewards_sdk/**'
+      - 'templates/rewards_harness/**'
+      - 'skills/rewards-build/**'
+      - 'lib/wallet_sdk/**'
+      - '.github/workflows/rewards_build.yml'
+
+jobs:
+  verify:
+    name: Verification Gate (Act 1)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Bootstrap dependencies
+        shell: pwsh
+        run: |
+          .\skills\rewards-build\scripts\bootstrap.ps1
+
+      - name: Run Verification Gate
+        shell: pwsh
+        run: |
+          .\skills\rewards-build\scripts\verify.ps1 -Act 1

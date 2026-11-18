@@ -1,0 +1,19 @@
+name: rewards_harness
+description: Minimal reference harness demonstrating all 6 headless flows with rewards_sdk.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  rewards_sdk:
+    path: ../../packages/rewards_sdk
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
