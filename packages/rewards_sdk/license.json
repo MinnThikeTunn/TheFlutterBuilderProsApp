@@ -1,7 +1,7 @@
 {
   "customer": "TheBuilderPros",
   "version": "0.1.0",
-  "issuedAt": "2026-11-18T09:57:42.579690Z",
+  "issuedAt": "2026-11-22T09:50:59.560159Z",
   "fileHashes": {
     "lib/app_master_roster.dart": "2bb8a5204d2da3fdef88fb494613eb48eaa407b940bdb3c0d9f74a462e2bf389",
     "lib/rewards_recovery_page.dart": "342d01330c17ad675d5d1a85c8bebcff3e1fa0bae5dc0cc5af36a4ffae203ee9",

@@ -17,8 +17,10 @@ class AppMasterController extends BaseController {
   final RxString rosterError = ''.obs;
 
   Future<void> loadRoster({bool more = false}) async {
-    if (isLoadingRoster.value || (more && rosterPage.value?.nextCursor == null))
+    if (isLoadingRoster.value ||
+        (more && rosterPage.value?.nextCursor == null)) {
       return;
+    }
     isLoadingRoster.value = true;
     rosterError.value = '';
     final previous = rosterPage.value;
@@ -30,7 +32,9 @@ class AppMasterController extends BaseController {
       final page = await _walletSdk.getAppMasterRoster(
         cursor: more ? previous?.nextCursor : null,
       );
-      if (isClosed) return;
+      if (isClosed) {
+        return;
+      }
       if (more &&
           (page.environment != previous?.environment ||
               page.authorityAccount != previous?.authorityAccount)) {
@@ -42,8 +46,9 @@ class AppMasterController extends BaseController {
         );
       }
       final ids = rosterEntries.map((entry) => entry.id).toSet();
-      if (page.entries.any((entry) => ids.contains(entry.id)))
+      if (page.entries.any((entry) => ids.contains(entry.id))) {
         throw StateError('Non-progressing roster.');
+      }
       rosterEntries.addAll(page.entries);
       rosterPage.value = page;
     } on WalletSdkException catch (error) {

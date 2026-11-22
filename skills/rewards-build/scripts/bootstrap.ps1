@@ -35,23 +35,27 @@ try {
 # 3. Resolve Dependencies
 Write-Host "`n3. Resolving Dependencies across packages..." -ForegroundColor Yellow
 
-Write-Host "  -> packages/rewards_sdk" -ForegroundColor Gray
-Push-Location "$RepoRoot\packages\rewards_sdk"
-try {
-    flutter pub get
-} finally {
-    Pop-Location
+if (Test-Path "$RepoRoot\packages\rewards_sdk") {
+    Write-Host "  -> packages/rewards_sdk" -ForegroundColor Gray
+    Push-Location "$RepoRoot\packages\rewards_sdk"
+    try {
+        flutter pub get
+    } finally {
+        Pop-Location
+    }
 }
 
-Write-Host "  -> templates/rewards_harness" -ForegroundColor Gray
-Push-Location "$RepoRoot\templates\rewards_harness"
-try {
-    flutter pub get
-} finally {
-    Pop-Location
+if (Test-Path "$RepoRoot\templates\rewards_harness") {
+    Write-Host "  -> templates/rewards_harness" -ForegroundColor Gray
+    Push-Location "$RepoRoot\templates\rewards_harness"
+    try {
+        flutter pub get
+    } finally {
+        Pop-Location
+    }
 }
 
-Write-Host "  -> Root host application" -ForegroundColor Gray
+Write-Host "  -> Host application ($RepoRoot)" -ForegroundColor Gray
 Push-Location $RepoRoot
 try {
     flutter pub get

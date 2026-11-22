@@ -42,16 +42,19 @@ class WalletController extends BaseController {
   }
 
   Future<void> resolvePendingTransfer({String? competingHash}) async {
-    if (isCheckingTransfer.value) return;
+    if (isCheckingTransfer.value) {
+      return;
+    }
     isCheckingTransfer.value = true;
     transferStatusError.value = '';
     try {
       transferOutcome.value = await _walletSdk.resolvePendingRewardsTransfer(
         competingTransactionHash: competingHash,
       );
-      if (transferOutcome.value?.state == RewardsTransferState.uncertain)
+      if (transferOutcome.value?.state == RewardsTransferState.uncertain) {
         transferStatusError.value =
             'Not enough verified evidence yet. Keep this transfer saved, retry later, or ask App Master for a conflicting transaction reference.';
+      }
     } on WalletSdkException catch (error) {
       transferStatusError.value = error.safeMessage;
     } catch (_) {

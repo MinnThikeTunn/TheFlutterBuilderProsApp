@@ -16,11 +16,15 @@ CURRENT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 echo "Current git branch: $CURRENT_BRANCH"
 
 echo -e "\n3. Resolving Dependencies across packages..."
-cd "$REPO_ROOT/packages/rewards_sdk"
-flutter pub get
+if [ -d "$REPO_ROOT/packages/rewards_sdk" ]; then
+  cd "$REPO_ROOT/packages/rewards_sdk"
+  flutter pub get
+fi
 
-cd "$REPO_ROOT/templates/rewards_harness"
-flutter pub get
+if [ -d "$REPO_ROOT/templates/rewards_harness" ]; then
+  cd "$REPO_ROOT/templates/rewards_harness"
+  flutter pub get
+fi
 
 cd "$REPO_ROOT"
 flutter pub get
