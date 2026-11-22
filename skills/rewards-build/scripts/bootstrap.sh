@@ -17,8 +17,17 @@ echo "Current git branch: $CURRENT_BRANCH"
 
 echo -e "\n3. Resolving Dependencies across packages..."
 if [ -d "$REPO_ROOT/packages/rewards_sdk" ]; then
+  echo "  -> Found local packages/rewards_sdk"
   cd "$REPO_ROOT/packages/rewards_sdk"
   flutter pub get
+else
+  if [ -f "$REPO_ROOT/pubspec.yaml" ]; then
+    if ! grep -q "rewards_sdk" "$REPO_ROOT/pubspec.yaml"; then
+      echo "  -> rewards_sdk not found in pubspec.yaml. Auto-installing from Git (v0.1.0)..."
+      cd "$REPO_ROOT"
+      flutter pub add "rewards_sdk@{git:{url: https://github.com/MinnThikeTunn/TheFlutterBuilderProsApp.git, ref: v0.1.0, path: packages/rewards_sdk}}"
+    fi
+  fi
 fi
 
 if [ -d "$REPO_ROOT/templates/rewards_harness" ]; then

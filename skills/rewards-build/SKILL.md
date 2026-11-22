@@ -11,19 +11,16 @@ A deterministic, turnkey workflow guide and automation suite for integrating, te
 
 When the user asks to integrate, install, or build with Builder Rewards in a Flutter application, **the AI agent must handle the entire setup autonomously without asking the user to manually configure dependencies or native files**:
 
-### Phase 1: Automated Dependency Resolution
+### Phase 1: Automated Dependency Resolution & Self-Download
 1. Inspect the host `pubspec.yaml`:
-   - If `rewards_sdk` is available on pub.dev, run: `flutter pub add rewards_sdk`
-   - If using a monorepo or local vendor path, add `rewards_sdk: { path: packages/rewards_sdk }`
-   - If using a remote Git repository, add:
-     ```yaml
-     dependencies:
-       rewards_sdk:
-         git:
-           url: https://github.com/theBuilderPros/TheFlutterBuilderProsApp.git
-           path: packages/rewards_sdk
+   - If `packages/rewards_sdk` exists locally, link via `path: packages/rewards_sdk`.
+   - If not yet installed, automatically run:
+     ```bash
+     flutter pub add "rewards_sdk@{git:{url: https://github.com/MinnThikeTunn/TheFlutterBuilderProsApp.git, ref: v0.1.0, path: packages/rewards_sdk}}"
      ```
-2. Run `flutter pub get`.
+   - (Or if published to pub.dev: `flutter pub add rewards_sdk`)
+2. Alternatively, executing `.\scripts\bootstrap.ps1` (or `bootstrap.sh`) will automatically detect missing dependencies and auto-inject the Git package.
+3. Run `flutter pub get`.
 
 ### Phase 2: Native Configuration & Permissions Auto-Patch
 1. **Android Setup**:

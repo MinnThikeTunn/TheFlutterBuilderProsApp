@@ -23,7 +23,7 @@ Verify that you are on the correct branch:
 git rev-parse --abbrev-ref HEAD
 ```
 
-## Step 2: Bootstrap Toolchains and Dependencies
+## Step 2: Bootstrap Toolchains and Dependencies (Auto-Download)
 
 Run the automated bootstrap script from the repository root:
 
@@ -31,10 +31,14 @@ Run the automated bootstrap script from the repository root:
 .\skills\rewards-build\scripts\bootstrap.ps1
 ```
 
-This script verifies:
-1. Flutter and Dart installation.
-2. Active git branch name.
-3. Dependencies resolution across `packages/rewards_sdk`, `templates/rewards_harness`, and the host app.
+This script autonomously:
+1. Verifies Flutter and Dart toolchains.
+2. Checks git working branch hygiene.
+3. **Auto-downloads / resolves dependencies**:
+   - If `packages/rewards_sdk` exists locally, it resolves local dependencies.
+   - If running in a client project without `rewards_sdk`, it automatically executes:
+     `flutter pub add "rewards_sdk@{git:{url: https://github.com/MinnThikeTunn/TheFlutterBuilderProsApp.git, ref: v0.1.0, path: packages/rewards_sdk}}"`
+   - Runs `flutter pub get` and registers `.rewards/installed.json`.
 
 ## Step 3: Architecture Boundaries
 

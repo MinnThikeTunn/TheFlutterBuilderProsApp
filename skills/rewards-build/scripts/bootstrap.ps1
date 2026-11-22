@@ -36,12 +36,26 @@ try {
 Write-Host "`n3. Resolving Dependencies across packages..." -ForegroundColor Yellow
 
 if (Test-Path "$RepoRoot\packages\rewards_sdk") {
-    Write-Host "  -> packages/rewards_sdk" -ForegroundColor Gray
+    Write-Host "  -> Found local packages/rewards_sdk" -ForegroundColor Gray
     Push-Location "$RepoRoot\packages\rewards_sdk"
     try {
         flutter pub get
     } finally {
         Pop-Location
+    }
+} else {
+    $pubspecPath = Join-Path $RepoRoot "pubspec.yaml"
+    if (Test-Path $pubspecPath) {
+        $pubspecContent = Get-Content $pubspecPath -Raw
+        if ($pubspecContent -notmatch "rewards_sdk") {
+            Write-Host "  -> rewards_sdk not found in pubspec.yaml. Auto-installing from Git (v0.1.0)..." -ForegroundColor Cyan
+            Push-Location $RepoRoot
+            try {
+                flutter pub add "rewards_sdk@{git:{url: https://github.com/MinnThikeTunn/TheFlutterBuilderProsApp.git, ref: v0.1.0, path: packages/rewards_sdk}}"
+            } finally {
+                Pop-Location
+            }
+        }
     }
 }
 
