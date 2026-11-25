@@ -12,11 +12,15 @@ theBuilderPros is a high-performance Flutter mobile application and headless Rew
 
 The repository provides the **Rewards Build Skill**, a turnkey workflow suite that enables any AI coding assistant (Claude Code, Cursor, Windsurf, Antigravity) to automatically install, configure, and scaffold the headless Rewards SDK into any Flutter project with **zero manual setup**.
 
-### 1. Install the Skill via `npx skills`
-Install the skill directly into your AI agent environment from this repository:
+### 1. Install the Skills via `npx skills`
+Install both skills (`rewards-build` and `ask-rewards`) together into your AI agent environment from this repository:
 
 ```bash
-npx skills add MinnThikeTunn/TheFlutterBuilderProsApp --skill rewards-build
+# Interactive: discovers and installs all skills in the repo
+npx skills add MinnThikeTunn/TheFlutterBuilderProsApp
+
+# Or non-interactive (all skills across all detected agents)
+npx skills add MinnThikeTunn/TheFlutterBuilderProsApp --all
 ```
 
 ### 2. Prompt Your AI Agent
@@ -132,7 +136,8 @@ TheFlutterBuilderProsApp/
 ├── packages/
 │   └── rewards_sdk/                  # Standalone headless pure-Dart SDK (130 unit tests)
 ├── skills/
-│   └── rewards-build/                # AI Agent skill suite (stages, recipes, verification scripts)
+│   ├── rewards-build/                # AI Agent skill suite (stages, recipes, verification scripts)
+│   └── ask-rewards/                  # Read-only SDK assistant & coverage auditor skill
 ├── templates/
 │   └── rewards_harness/              # Minimal standalone reference integration harness
 ├── lib/
