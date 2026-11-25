@@ -1,0 +1,5 @@
+interface:
+  display_name: "Ask Rewards"
+  short_description: "Assistant & coverage auditor for rewards_sdk"
+policy:
+  allow_implicit_invocation: false

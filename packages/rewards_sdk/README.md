@@ -53,10 +53,14 @@ void main() async {
 }
 ```
 
-## AI Agent Skill
+## AI Agent Skills
 
-This package comes with a turnkey AI agent skill suite in `skills/rewards-build/`. Install it via `npx skills`:
+This package comes with a turnkey AI agent skill suite in `skills/` (`rewards-build` and `ask-rewards`). Install all skills together via `npx skills`:
 
 ```bash
-npx skills add MinnThikeTunn/TheFlutterBuilderProsApp --skill rewards-build
+# Interactive: discovers and installs all skills in the repo
+npx skills add MinnThikeTunn/TheFlutterBuilderProsApp
+
+# Or non-interactive (all skills across all detected agents)
+npx skills add MinnThikeTunn/TheFlutterBuilderProsApp --all
 ```
